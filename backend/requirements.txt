@@ -1,0 +1,12 @@
+fastapi==0.111.0
+uvicorn==0.30.1
+pydantic==2.7.4
+pydantic-settings==2.3.4
+sqlalchemy==2.0.30
+psycopg2-binary==2.9.9
+alembic==1.13.1
+pytest==8.2.2
+httpx==0.27.0
+langgraph
+langchain-google-genai
+langchain-core
