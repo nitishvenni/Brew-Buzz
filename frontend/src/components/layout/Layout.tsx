@@ -1,108 +1,166 @@
-
-import { Home, Store, Package, ShoppingBag, BarChart3, BrainCircuit, FileText, Bell, Settings, Search } from 'lucide-react';
+import { NavLink, useLocation } from 'react-router-dom';
+import { Home, Store, Package, ShoppingBag, BarChart3, BrainCircuit, FileText, Bell, Settings, Search, Calendar, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 interface NavItemProps {
   icon: React.ElementType;
   label: string;
-  active?: boolean;
+  to?: string;
   disabled?: boolean;
   badge?: number;
+  comingSoon?: boolean;
+  isActiveOverride?: boolean;
 }
 
-const NavItem = ({ icon: Icon, label, active, disabled, badge }: NavItemProps) => (
-  <button 
-    className={cn(
-      "flex items-center w-full px-4 py-3 rounded-xl mb-1 transition-all duration-200",
-      active 
-        ? "bg-[#c89f70] text-white shadow-md shadow-[#c89f70]/20 font-medium" 
-        : "text-[#7a6b5d] hover:bg-[#f3ede4] hover:text-[#5c4d3c]",
-      disabled && "opacity-50 cursor-not-allowed hover:bg-transparent"
-    )}
-    disabled={disabled}
-  >
-    <Icon className="w-5 h-5 mr-3" />
-    <span className="flex-1 text-left">{label}</span>
-    {badge !== undefined && (
-      <span className="bg-[#e87c48] text-white text-xs font-bold px-2 py-0.5 rounded-full">
-        {badge}
-      </span>
-    )}
-  </button>
-);
+const NavItem = ({ icon: Icon, label, to, disabled, badge, comingSoon, isActiveOverride }: NavItemProps) => {
+  if (disabled || !to) {
+    return (
+      <div className="flex flex-col mb-1 group">
+        <button
+          className={cn(
+            "flex items-center w-full px-4 py-2.5 rounded-xl transition-all duration-200",
+            "text-[#8c7b6c] opacity-60 cursor-not-allowed"
+          )}
+          disabled
+        >
+          <Icon className="w-5 h-5 mr-3 shrink-0" />
+          <span className="flex-1 text-left text-sm font-medium whitespace-nowrap overflow-hidden text-ellipsis mr-2">{label}</span>
+          {comingSoon && (
+            <span className="text-[9px] font-bold text-[#bbaaa0] bg-[#f5efe6] border border-[#ece3d4] px-1.5 py-0.5 rounded flex-shrink-0 uppercase tracking-wider">
+              Soon
+            </span>
+          )}
+        </button>
+      </div>
+    );
+  }
 
-export function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <NavLink
+      to={to}
+      end={to === '/'}
+      className={({ isActive }) =>
+        cn(
+          "flex items-center w-full px-4 py-2.5 rounded-xl mb-1 transition-all duration-200 group",
+          isActive || isActiveOverride
+            ? "bg-[#c89f70] text-white shadow-sm shadow-[#c89f70]/20 font-medium"
+            : "text-[#7a6b5d] hover:bg-[#f3ede4] hover:text-[#5c4d3c]"
+        )
+      }
+    >
+      <Icon className="w-5 h-5 mr-3 shrink-0" />
+      <span className="flex-1 text-left text-sm font-medium whitespace-nowrap overflow-hidden text-ellipsis mr-2">{label}</span>
+      {isActiveOverride && (
+         <span className="text-[9px] font-bold text-green-700 bg-green-100 border border-green-200 px-1.5 py-0.5 rounded flex-shrink-0 uppercase tracking-wider">
+           Active
+         </span>
+      )}
+      {badge !== undefined && (
+        <span className="bg-[#e87c48] text-white text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0">
+          {badge}
+        </span>
+      )}
+    </NavLink>
+  );
+};
+
+interface LayoutProps {
+  children: React.ReactNode;
+  title?: string;
+  subtitle?: string;
+}
+
+export function Layout({ children, title, subtitle }: LayoutProps) {
+  const location = useLocation();
+
+  const pageTitle = title || (location.pathname === '/outlet-performance' ? 'Outlet Performance' : 'Welcome Admin');
+  const pageSubtitle = subtitle || (location.pathname === '/outlet-performance'
+    ? 'Monitor, compare, and investigate franchise outlet performance.'
+    : "Here's your franchise performance overview.");
+
   return (
     <div className="flex h-screen bg-[#faf8f5] text-[#3d3228] font-sans">
       {/* Sidebar */}
-      <aside className="w-64 bg-[#fdfaf6] border-r border-[#ece3d4] flex flex-col h-full shadow-sm">
-        <div className="p-6 flex flex-col items-center border-b border-[#ece3d4]/50">
-          <div className="w-16 h-16 bg-white rounded-2xl shadow-sm border border-[#ece3d4] flex items-center justify-center mb-3">
-             <Store className="w-8 h-8 text-[#c89f70]" />
-          </div>
-          <h1 className="text-2xl font-bold text-[#4a3b2c] tracking-tight">Brew Buzz</h1>
-          <p className="text-[#8c7b6c] text-xs font-medium uppercase tracking-widest mt-1">Pizza • Coffee</p>
+      <aside className="w-[280px] bg-[#fdfaf6] border-r border-[#ece3d4] flex flex-col h-full shadow-sm shrink-0">
+        <div className="p-6 flex flex-col items-center border-b border-[#ece3d4]/50 shrink-0">
+          <img src="/images/logo.png" alt="Brew Buzz" className="w-32 h-auto object-contain mb-2" />
         </div>
         
-        <div className="flex-1 overflow-y-auto py-6 px-4">
-          <NavItem icon={Home} label="Overview" active />
-          <NavItem icon={Store} label="Outlet Performance" />
-          <NavItem icon={Package} label="Products" />
-          <NavItem icon={ShoppingBag} label="Orders" />
-          <NavItem icon={BarChart3} label="Analytics" disabled />
-          <NavItem icon={BrainCircuit} label="AI Insights" disabled />
-          <NavItem icon={FileText} label="Reports" disabled />
-          <NavItem icon={Bell} label="Alerts" badge={3} disabled />
-          <NavItem icon={Settings} label="Settings" disabled />
+        <div className="flex-1 overflow-y-auto py-5 px-4 custom-scrollbar">
+          
+          <div className="mb-8">
+            <h4 className="text-[10px] font-bold text-[#bbaaa0] uppercase tracking-widest mb-3 px-4">Business Dashboard</h4>
+            <NavItem icon={Home} label="Overview" to="/" />
+            <NavItem icon={Store} label="Outlet Performance" to="/outlet-performance" />
+            <NavItem icon={Package} label="Products" disabled />
+            <NavItem icon={ShoppingBag} label="Orders" disabled />
+            <NavItem icon={BarChart3} label="Analytics" disabled />
+            <NavItem icon={FileText} label="Reports" disabled />
+            <NavItem icon={Bell} label="Alerts" badge={3} disabled />
+            <NavItem icon={Settings} label="Settings" disabled />
+          </div>
+
+          <div className="mb-4">
+            <h4 className="text-[10px] font-bold text-[#bbaaa0] uppercase tracking-widest mb-3 px-4 flex items-center">
+              AI Intelligence
+            </h4>
+            <NavItem icon={BrainCircuit} label="Outlet Performance AI" to="/outlet-performance" isActiveOverride={location.pathname.startsWith('/outlet-performance')} />
+            <NavItem icon={Package} label="Inventory Intelligence" to="/inventory" />
+            <NavItem icon={Store} label="Staff Intelligence AI" disabled comingSoon />
+            <NavItem icon={BarChart3} label="Marketing AI" disabled comingSoon />
+            <NavItem icon={CheckCircle2} label="Audit AI" disabled comingSoon />
+          </div>
         </div>
         
-        <div className="p-6 border-t border-[#ece3d4]/50">
-          <div className="bg-[#f5efe6] rounded-2xl p-4 text-center">
-            <h4 className="font-bold text-[#5c4d3c] mb-1">Brew Buzz AI</h4>
-            <p className="text-xs text-[#8c7b6c] mb-3">Intelligent franchise insights.</p>
-          </div>
+        <div className="p-4 border-t border-[#ece3d4]/50 shrink-0 bg-[#fdfaf6]">
+           <div className="flex items-center space-x-3 hover:bg-[#f3ede4] p-2 rounded-xl transition-colors cursor-pointer">
+              <div className="w-10 h-10 bg-[#c89f70] rounded-full flex items-center justify-center text-white font-bold shadow-sm shrink-0 border border-[#b08558]">
+                AD
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-[#4a3b2c] truncate">Admin</p>
+                <p className="text-xs text-[#8c7b6c] truncate">Franchise Owner</p>
+              </div>
+              <ChevronDown className="w-4 h-4 text-[#8c7b6c]" />
+            </div>
         </div>
       </aside>
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col h-full overflow-hidden">
         {/* Header */}
-        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-[#ece3d4] flex items-center justify-between px-8 z-10 sticky top-0">
+        <header className="h-20 bg-white/90 backdrop-blur-md border-b border-[#ece3d4] flex items-center justify-between px-8 z-10 sticky top-0 shrink-0">
           <div>
-            <h2 className="text-2xl font-bold text-[#4a3b2c]">Welcome Admin</h2>
-            <p className="text-[#8c7b6c] text-sm mt-0.5">Here's your franchise performance overview.</p>
+            <h2 className="text-2xl font-extrabold text-[#4a3b2c] tracking-tight">{pageTitle}</h2>
+            <p className="text-[#8c7b6c] text-sm mt-0.5 font-medium">{pageSubtitle}</p>
           </div>
           
           <div className="flex items-center space-x-6">
-            <div className="relative">
+            <div className="relative hidden md:block">
               <Search className="w-4 h-4 text-[#8c7b6c] absolute left-3 top-1/2 -translate-y-1/2" />
               <input 
                 type="text" 
                 placeholder="Search outlets, products..." 
-                className="pl-9 pr-4 py-2 bg-[#fdfaf6] border border-[#ece3d4] rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#c89f70]/50 focus:border-[#c89f70] w-64 transition-all"
+                className="pl-9 pr-4 py-2.5 bg-[#fdfaf6] border border-[#ece3d4] rounded-full text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#c89f70]/50 focus:border-[#c89f70] w-64 transition-all shadow-sm"
               />
             </div>
-            
-            <button className="relative p-2 text-[#8c7b6c] hover:bg-[#f3ede4] rounded-full transition-colors">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#e87c48] rounded-full ring-2 ring-white"></span>
-            </button>
-            
-            <div className="flex items-center space-x-3 border-l border-[#ece3d4] pl-6">
-              <div className="w-10 h-10 bg-[#c89f70] rounded-full flex items-center justify-center text-white font-bold shadow-sm">
-                AD
-              </div>
-              <div>
-                <p className="text-sm font-bold text-[#4a3b2c]">Admin</p>
-                <p className="text-xs text-[#8c7b6c]">Franchise Owner</p>
-              </div>
+
+            <div className="hidden lg:flex items-center bg-[#fdfaf6] border border-[#ece3d4] rounded-full px-4 py-2.5 text-sm font-bold text-[#4a3b2c] cursor-pointer hover:border-[#c89f70] hover:bg-white transition-all shadow-sm">
+              <Calendar className="w-4 h-4 text-[#c89f70] mr-2" />
+              Aug 23 - Aug 29, 2026
+              <ChevronDown className="w-4 h-4 text-[#8c7b6c] ml-2" />
             </div>
+            
+            <button className="relative p-2.5 bg-[#fdfaf6] border border-[#ece3d4] text-[#8c7b6c] hover:bg-white hover:border-[#c89f70] hover:text-[#c89f70] rounded-full transition-all shadow-sm">
+              <Bell className="w-5 h-5" />
+              <span className="absolute top-2 right-2 w-2 h-2 bg-[#e87c48] rounded-full ring-2 ring-white"></span>
+            </button>
           </div>
         </header>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-auto p-8">
-          <div className="max-w-7xl mx-auto space-y-6">
+        <div className="flex-1 overflow-auto p-6 md:p-8">
+          <div className="max-w-[1600px] mx-auto space-y-6">
             {children}
           </div>
         </div>

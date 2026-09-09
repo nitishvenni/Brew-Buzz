@@ -104,6 +104,9 @@ def calculate_franchise_scores(
             outlet_name=outlet["outlet_name"],
             overall_score=overall_int,
             performance_band=get_performance_band(overall_int),
+            revenue=rev,
+            order_count=ord_cnt,
+            aov=aov,
             components=ScoreComponents(
                 revenue_score=round(rev_score, 1),
                 orders_score=round(ord_score, 1),

@@ -14,6 +14,9 @@ class OutletScore(BaseModel):
     outlet_name: str
     overall_score: int
     performance_band: str
+    revenue: float
+    order_count: int
+    aov: float
     components: ScoreComponents
     revenue_vs_benchmark: float
     growth_percentage: float

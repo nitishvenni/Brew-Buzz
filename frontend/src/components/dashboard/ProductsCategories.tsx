@@ -1,51 +1,67 @@
+import { ArrowUpRight, ArrowDownRight, Coffee, Pizza, CupSoda, Package } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
+import { cn, formatCurrency, formatNumber } from '../../lib/utils';
 
-import { ArrowRight, Pizza, Coffee, Utensils } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { formatCurrency, formatNumber } from '../../lib/utils';
+const COLORS = ['#c89f70', '#e87c48', '#8c7b6c', '#ece3d4'];
+
+const getProductIcon = (name: string) => {
+  const lower = name.toLowerCase();
+  if (lower.includes('pizza')) return <Pizza className="w-5 h-5 text-[#e87c48]" />;
+  if (lower.includes('coffee') || lower.includes('latte') || lower.includes('cappuccino') || lower.includes('americano') || lower.includes('espresso')) return <Coffee className="w-5 h-5 text-[#c89f70]" />;
+  if (lower.includes('tea') || lower.includes('water') || lower.includes('soda')) return <CupSoda className="w-5 h-5 text-[#8c7b6c]" />;
+  return <Package className="w-5 h-5 text-[#8c7b6c]" />;
+};
 
 export function TopProducts({ products }: { products: any[] }) {
-  const getIcon = (category: string) => {
-    if (category.toLowerCase().includes('pizza')) return <Pizza className="w-5 h-5" />;
-    if (category.toLowerCase().includes('coffee') || category.toLowerCase().includes('beverage')) return <Coffee className="w-5 h-5" />;
-    return <Utensils className="w-5 h-5" />;
-  };
-
   return (
-    <div className="bg-white rounded-2xl p-6 border border-[#ece3d4] shadow-sm flex flex-col h-full">
-      <div className="flex justify-between items-center mb-6">
+    <div className="bg-white rounded-2xl border border-[#ece3d4] shadow-sm flex flex-col h-full">
+      <div className="p-6 border-b border-[#ece3d4] flex justify-between items-center">
         <h3 className="text-lg font-bold text-[#4a3b2c]">Top Products</h3>
-        <button className="text-[#c89f70] text-sm font-medium flex items-center hover:text-[#b08558]">
-          View all <ArrowRight className="w-4 h-4 ml-1" />
+        <button className="text-[#c89f70] text-sm font-medium flex items-center hover:text-[#b08558] transition-colors">
+          View all <ArrowUpRight className="w-4 h-4 ml-1" />
         </button>
       </div>
       
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
         <table className="w-full">
-          <thead className="bg-[#fdfaf6] sticky top-0">
+          <thead className="bg-[#fdfaf6] sticky top-0 z-10">
             <tr>
-              <th className="text-left text-xs font-medium text-[#8c7b6c] uppercase tracking-wider px-4 py-2 border-b border-[#ece3d4]">Product</th>
-              <th className="text-right text-xs font-medium text-[#8c7b6c] uppercase tracking-wider px-4 py-2 border-b border-[#ece3d4]">Orders</th>
-              <th className="text-right text-xs font-medium text-[#8c7b6c] uppercase tracking-wider px-4 py-2 border-b border-[#ece3d4]">Sales</th>
+              <th className="text-left text-xs font-bold text-[#bbaaa0] uppercase tracking-wider px-6 py-3 border-b border-[#ece3d4]">Product</th>
+              <th className="text-right text-xs font-bold text-[#bbaaa0] uppercase tracking-wider px-6 py-3 border-b border-[#ece3d4]">Orders</th>
+              <th className="text-right text-xs font-bold text-[#bbaaa0] uppercase tracking-wider px-6 py-3 border-b border-[#ece3d4]">Sales (₹)</th>
+              <th className="text-right text-xs font-bold text-[#bbaaa0] uppercase tracking-wider px-6 py-3 border-b border-[#ece3d4]">Growth</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#ece3d4]/50">
-            {products?.slice(0, 5).map((p: any) => (
-              <tr key={p.product_id} className="hover:bg-[#fdfaf6]">
-                <td className="px-4 py-3">
-                  <div className="flex items-center min-w-0">
-                    <div className="w-8 h-8 rounded-full bg-[#fdf3eb] text-[#d48c48] flex items-center justify-center mr-3 shrink-0">
-                      {getIcon(p.category_name)}
+            {products?.map((product: any, idx: number) => (
+              <tr key={idx} className="hover:bg-[#fdfaf6] transition-colors">
+                <td className="px-6 py-3.5">
+                  <div className="flex items-center">
+                    <div className="w-8 h-8 rounded-full bg-[#fdfaf6] border border-[#ece3d4] flex items-center justify-center mr-3 shrink-0">
+                       {getProductIcon(product.product_name)}
                     </div>
-                    <span className="font-bold text-[#4a3b2c] text-sm truncate">{p.product_name}</span>
+                    <span className="font-bold text-[#4a3b2c] text-sm">{product.product_name}</span>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-right text-sm text-[#8c7b6c] whitespace-nowrap">{formatNumber(p.order_count)}</td>
-                <td className="px-4 py-3 text-right text-sm font-medium text-[#4a3b2c] whitespace-nowrap">{formatCurrency(p.revenue)}</td>
+                <td className="px-6 py-3.5 text-right text-sm text-[#8c7b6c] font-medium">{formatNumber(product.order_count)}</td>
+                <td className="px-6 py-3.5 text-right text-sm font-bold text-[#4a3b2c]">{formatCurrency(product.revenue)}</td>
+                <td className="px-6 py-3.5 text-right">
+                  <div className="flex items-center justify-end">
+                    {product.growth_percentage > 0 ? (
+                      <span className="flex items-center text-green-600 text-sm font-bold bg-green-50 px-2 py-0.5 rounded">
+                        <ArrowUpRight className="w-3.5 h-3.5 mr-0.5" /> {product.growth_percentage}%
+                      </span>
+                    ) : product.growth_percentage < 0 ? (
+                      <span className="flex items-center text-red-600 text-sm font-bold bg-red-50 px-2 py-0.5 rounded">
+                        <ArrowDownRight className="w-3.5 h-3.5 mr-0.5" /> {Math.abs(product.growth_percentage)}%
+                      </span>
+                    ) : (
+                      <span className="text-[#8c7b6c] text-sm font-bold bg-gray-50 px-2 py-0.5 rounded">0%</span>
+                    )}
+                  </div>
+                </td>
               </tr>
             ))}
-            {(!products || products.length === 0) && (
-              <tr><td colSpan={3} className="text-center py-4 text-[#8c7b6c]">No products found</td></tr>
-            )}
           </tbody>
         </table>
       </div>
@@ -53,25 +69,32 @@ export function TopProducts({ products }: { products: any[] }) {
   );
 }
 
-const COLORS = ['#c89f70', '#e87c48', '#d48c48', '#f0b784', '#ece3d4'];
-
 export function CategoryPerformance({ categories, totalRevenue }: { categories: any[], totalRevenue: number }) {
-  const chartData = categories?.map(c => ({
+  if (!categories || categories.length === 0) {
+     return (
+       <div className="bg-white rounded-2xl border border-[#ece3d4] shadow-sm flex flex-col h-full items-center justify-center">
+         <p className="text-[#8c7b6c]">No category data available</p>
+       </div>
+     );
+  }
+
+  const chartData = categories.map(c => ({
     name: c.category_name,
-    value: parseFloat(c.revenue)
-  })) || [];
+    value: c.revenue,
+    growth: c.growth_percentage
+  })).sort((a, b) => b.value - a.value);
 
   return (
-    <div className="bg-white rounded-2xl p-6 border border-[#ece3d4] shadow-sm flex flex-col h-full">
-      <div className="flex justify-between items-center mb-6">
+    <div className="bg-white rounded-2xl border border-[#ece3d4] shadow-sm flex flex-col h-full">
+      <div className="p-6 border-b border-[#ece3d4] flex justify-between items-center">
         <h3 className="text-lg font-bold text-[#4a3b2c]">Category Performance</h3>
-        <button className="text-[#c89f70] text-sm font-medium flex items-center hover:text-[#b08558]">
-          View all <ArrowRight className="w-4 h-4 ml-1" />
+        <button className="text-[#c89f70] text-sm font-medium flex items-center hover:text-[#b08558] transition-colors">
+          View all <ArrowUpRight className="w-4 h-4 ml-1" />
         </button>
       </div>
-
-      <div className="flex-1 flex flex-col sm:flex-row items-center justify-center gap-6">
-        <div className="w-full sm:w-1/2 h-48 relative flex-shrink-0">
+      
+      <div className="flex-1 p-6 flex flex-col items-center justify-center relative min-h-[250px]">
+        <div className="w-full h-[180px] sm:h-[200px] mb-4 relative">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -88,25 +111,33 @@ export function CategoryPerformance({ categories, totalRevenue }: { categories: 
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip formatter={(value: any) => `₹${Number(value).toLocaleString('en-IN', {maximumFractionDigits: 0})}`} />
+              <RechartsTooltip 
+                formatter={(value: any) => formatCurrency(value as number)}
+                contentStyle={{ borderRadius: '12px', border: '1px solid #ece3d4', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                itemStyle={{ color: '#4a3b2c', fontWeight: 'bold' }}
+              />
             </PieChart>
           </ResponsiveContainer>
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <span className="text-xs text-[#8c7b6c]">Revenue</span>
-            <span className="font-bold text-[#4a3b2c]">₹{(totalRevenue/1000).toFixed(1)}k</span>
+            <span className="text-[10px] font-bold text-[#8c7b6c] uppercase tracking-widest mb-0.5">Revenue Share</span>
+            <span className="text-lg sm:text-xl font-extrabold text-[#4a3b2c]">
+              ₹{(totalRevenue / 1000).toFixed(1)}k
+            </span>
           </div>
         </div>
-        
-        <div className="w-full sm:w-1/2 flex flex-col justify-center space-y-4">
-          {categories?.slice(0, 4).map((c: any, i: number) => (
-            <div key={c.category_id} className="flex justify-between items-center">
-              <div className="flex items-center min-w-0 mr-2">
-                <span className="w-3 h-3 rounded-full shrink-0 mr-2" style={{ backgroundColor: COLORS[i % COLORS.length] }}></span>
-                <span className="text-sm font-bold text-[#4a3b2c] truncate">{c.category_name}</span>
+
+        <div className="w-full space-y-2">
+          {chartData.slice(0, 4).map((entry, index) => (
+            <div key={index} className="flex items-center justify-between text-sm">
+              <div className="flex items-center">
+                <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
+                <span className="font-medium text-[#4a3b2c]">{entry.name}</span>
               </div>
-              <div className="text-right shrink-0">
-                <span className="text-sm font-bold text-[#4a3b2c] block">{parseFloat(c.revenue_percentage).toFixed(1)}%</span>
-                <span className="text-xs text-[#8c7b6c]">₹{(parseFloat(c.revenue)/1000).toFixed(1)}k</span>
+              <div className="flex items-center space-x-3">
+                <span className="font-bold text-[#4a3b2c]">{((entry.value / totalRevenue) * 100).toFixed(1)}%</span>
+                <span className={cn("text-xs font-bold w-14 text-right", entry.growth >= 0 ? "text-green-600" : "text-red-600")}>
+                   {entry.growth > 0 ? '↑' : entry.growth < 0 ? '↓' : ''} {Math.abs(entry.growth)}%
+                </span>
               </div>
             </div>
           ))}
@@ -118,18 +149,15 @@ export function CategoryPerformance({ categories, totalRevenue }: { categories: 
 
 export function PromoCard() {
   return (
-    <div className="bg-[#4a3b2c] rounded-2xl p-6 shadow-md h-full relative overflow-hidden flex flex-col justify-between group">
-      <div className="absolute -right-8 -top-8 w-40 h-40 bg-[#c89f70] rounded-full opacity-20 group-hover:scale-110 transition-transform duration-700 blur-xl"></div>
-      <div className="absolute -left-8 -bottom-8 w-32 h-32 bg-[#e87c48] rounded-full opacity-20 group-hover:scale-110 transition-transform duration-700 blur-xl"></div>
+    <div className="h-full rounded-2xl overflow-hidden relative shadow-sm border border-[#ece3d4] group cursor-pointer bg-black">
+      <img src="/images/promo.jpg" alt="Pizza Meets Coffee Promo" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#4a3b2c]/80 via-transparent to-transparent pointer-events-none"></div>
       
-      <div className="relative z-10">
-        <h3 className="text-3xl font-serif italic text-[#fdfaf6] mb-2">Pizza<br/>Meets<br/>Coffee</h3>
-        <p className="text-[#ece3d4] text-sm mt-2 opacity-90">Great combo.<br/>Greater happiness.</p>
+      <div className="absolute bottom-6 left-6 right-6">
+        <button className="bg-[#c89f70] hover:bg-[#b08558] text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-md backdrop-blur-sm border border-white/20 flex items-center">
+          Explore Bestsellers <ArrowUpRight className="w-4 h-4 ml-2" />
+        </button>
       </div>
-      
-      <button className="relative z-10 mt-6 bg-[#c89f70] hover:bg-[#b08558] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors self-start border border-[#d48c48]/50 shadow-sm">
-        Explore Bestsellers →
-      </button>
     </div>
   );
 }
