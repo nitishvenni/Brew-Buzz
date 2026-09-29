@@ -16,6 +16,13 @@ engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 client = TestClient(app)
 
+@pytest.fixture(autouse=True)
+def isolate_db_override():
+    app.dependency_overrides[get_db] = override_get_db
+    yield
+    app.dependency_overrides.clear()
+
+
 def override_get_db():
     try:
         db = TestingSessionLocal()
@@ -25,7 +32,6 @@ def override_get_db():
 
 @pytest.fixture(autouse=True)
 def setup_db():
-    app.dependency_overrides[get_db] = override_get_db
     Base.metadata.create_all(bind=engine)
     db = TestingSessionLocal()
     
@@ -72,7 +78,6 @@ def setup_db():
     
     yield
     Base.metadata.drop_all(bind=engine)
-    app.dependency_overrides.clear()
 
 def test_scoring_logic():
     db = TestingSessionLocal()

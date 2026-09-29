@@ -1,5 +1,5 @@
-import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Store, Package, ShoppingBag, BarChart3, BrainCircuit, FileText, Bell, Settings, Search, Calendar, ChevronDown, CheckCircle2 } from 'lucide-react';
+import { NavLink, useLocation, Link } from 'react-router-dom';
+import { Home, Store, Package, BarChart3, ChevronDown, Users } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 interface NavItemProps {
@@ -83,32 +83,20 @@ export function Layout({ children, title, subtitle }: LayoutProps) {
       {/* Sidebar */}
       <aside className="w-[280px] bg-[#fdfaf6] border-r border-[#ece3d4] flex flex-col h-full shadow-sm shrink-0">
         <div className="p-6 flex flex-col items-center border-b border-[#ece3d4]/50 shrink-0">
-          <img src="/images/logo.png" alt="Brew Buzz" className="w-32 h-auto object-contain mb-2" />
+          <Link to="/landing" state={{ returnToReveal: true }} className="focus:outline-none focus:ring-2 focus:ring-[#c89f70] rounded-md transition-all hover:opacity-80">
+            <img src="/images/logo.png" alt="Brew Buzz" className="w-32 h-auto object-contain mb-2" />
+          </Link>
         </div>
         
         <div className="flex-1 overflow-y-auto py-5 px-4 custom-scrollbar">
           
           <div className="mb-8">
-            <h4 className="text-[10px] font-bold text-[#bbaaa0] uppercase tracking-widest mb-3 px-4">Business Dashboard</h4>
-            <NavItem icon={Home} label="Overview" to="/" />
-            <NavItem icon={Store} label="Outlet Performance" to="/outlet-performance" />
-            <NavItem icon={Package} label="Products" disabled />
-            <NavItem icon={ShoppingBag} label="Orders" disabled />
-            <NavItem icon={BarChart3} label="Analytics" disabled />
-            <NavItem icon={FileText} label="Reports" disabled />
-            <NavItem icon={Bell} label="Alerts" badge={3} disabled />
-            <NavItem icon={Settings} label="Settings" disabled />
-          </div>
-
-          <div className="mb-4">
-            <h4 className="text-[10px] font-bold text-[#bbaaa0] uppercase tracking-widest mb-3 px-4 flex items-center">
-              AI Intelligence
-            </h4>
-            <NavItem icon={BrainCircuit} label="Outlet Performance AI" to="/outlet-performance" isActiveOverride={location.pathname.startsWith('/outlet-performance')} />
-            <NavItem icon={Package} label="Inventory Intelligence" to="/inventory" />
-            <NavItem icon={Store} label="Staff Intelligence AI" disabled comingSoon />
-            <NavItem icon={BarChart3} label="Marketing AI" disabled comingSoon />
-            <NavItem icon={CheckCircle2} label="Audit AI" disabled comingSoon />
+            <h4 className="text-[10px] font-bold text-[#bbaaa0] uppercase tracking-widest mb-3 px-4">Business Intelligence</h4>
+            <NavItem icon={Home} label="Franchise Intelligence" to="/" />
+            <NavItem icon={Store} label="Outlet Performance" to="/outlet-performance" isActiveOverride={location.pathname.startsWith('/outlet-performance')} />
+            <NavItem icon={Package} label="Inventory Intelligence" to="/inventory" isActiveOverride={location.pathname.startsWith('/inventory')} />
+            <NavItem icon={Users} label="Workforce Intelligence" to="/workforce" isActiveOverride={location.pathname.startsWith('/workforce')} />
+            <NavItem icon={BarChart3} label="Marketing Intelligence" to="/marketing" isActiveOverride={location.pathname.startsWith('/marketing')} />
           </div>
         </div>
         
@@ -135,27 +123,7 @@ export function Layout({ children, title, subtitle }: LayoutProps) {
             <p className="text-[#8c7b6c] text-sm mt-0.5 font-medium">{pageSubtitle}</p>
           </div>
           
-          <div className="flex items-center space-x-6">
-            <div className="relative hidden md:block">
-              <Search className="w-4 h-4 text-[#8c7b6c] absolute left-3 top-1/2 -translate-y-1/2" />
-              <input 
-                type="text" 
-                placeholder="Search outlets, products..." 
-                className="pl-9 pr-4 py-2.5 bg-[#fdfaf6] border border-[#ece3d4] rounded-full text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#c89f70]/50 focus:border-[#c89f70] w-64 transition-all shadow-sm"
-              />
-            </div>
 
-            <div className="hidden lg:flex items-center bg-[#fdfaf6] border border-[#ece3d4] rounded-full px-4 py-2.5 text-sm font-bold text-[#4a3b2c] cursor-pointer hover:border-[#c89f70] hover:bg-white transition-all shadow-sm">
-              <Calendar className="w-4 h-4 text-[#c89f70] mr-2" />
-              Aug 23 - Aug 29, 2026
-              <ChevronDown className="w-4 h-4 text-[#8c7b6c] ml-2" />
-            </div>
-            
-            <button className="relative p-2.5 bg-[#fdfaf6] border border-[#ece3d4] text-[#8c7b6c] hover:bg-white hover:border-[#c89f70] hover:text-[#c89f70] rounded-full transition-all shadow-sm">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-[#e87c48] rounded-full ring-2 ring-white"></span>
-            </button>
-          </div>
         </header>
 
         {/* Scrollable Content */}

@@ -10,8 +10,14 @@ export async function fetchInventorySummary() {
     };
 }
 
-export async function fetchInventoryItems() {
-    const res = await fetch(`${API_BASE}/inventory/items`);
+export async function fetchInventoryItems(outletId?: number, startDate?: string, endDate?: string) {
+    const params = new URLSearchParams();
+    if (outletId) params.append('outlet_id', outletId.toString());
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const res = await fetch(`${API_BASE}/inventory/items${qs}`);
     if (!res.ok) throw new Error("Failed to fetch inventory items");
     const data = await res.json();
     return data.map((item: any) => ({

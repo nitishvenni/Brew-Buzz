@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api.routes import health, analytics, agents, inventory
+from app.api.routes import health, analytics, agents, inventory, workforce, marketing, audit
 
 app = FastAPI(title=settings.PROJECT_NAME)
 
@@ -20,4 +20,7 @@ app.include_router(health.router, tags=["health"])
 app.include_router(analytics.router, prefix="/api/v1")
 app.include_router(agents.router, prefix="/api/v1")
 app.include_router(inventory.router, prefix="/api/v1")
+app.include_router(workforce.router, prefix="/api/v1")
+app.include_router(marketing.router, prefix="/api/v1")
+app.include_router(audit.router, prefix="/api/v1")
 

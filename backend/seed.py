@@ -68,45 +68,96 @@ def seed_data(db: Session):
             db.refresh(product)
         products.append(product)
 
-    # 5. Orders and Order Items
-    # Generate historical data for past 60 days
-    # Outlet 0 (Downtown) - High volume, growing
-    # Outlet 1 (Mall) - Medium volume, stable
-    # Outlet 2 (Suburb) - Low volume, declining
+        # 5. Orders and Order Items
     
-    # Check if orders already exist to avoid duplicating seed
+    HISTORY_DAYS = 90
+    RANDOM_SEED = 42
+    rng = random.Random(RANDOM_SEED)
+
+    # Scenarios for deterministic demand variation
+    OUTLET_SCENARIOS = {
+        "Brew Buzz Downtown": "GROWING",
+        "Brew Buzz Mall": "STABLE",
+        "Brew Buzz Suburb": "DECLINING",
+    }
+
+    PRODUCT_SCENARIOS = {
+        "Pepperoni": "GROWING",
+        "Cold Coffee": "GROWING",
+        "Margherita": "STABLE",
+        "Espresso": "STABLE",
+        "Cappuccino": "STABLE",
+        "Latte": "STABLE",
+        "Farmhouse": "DECLINING",
+        "Brownie": "DECLINING",
+    }
+    
+    # Check if orders already exist. If so, we wipe them to allow clean reseeding.
+    # This ensures the 90-day window is always anchored to the CURRENT run date.
     if db.query(Order).count() > 0:
-        print("Orders already exist. Skipping order seeding.")
-        return
+        print("Wiping existing orders for clean reseeding...")
+        from app.models.domain import InventoryTransaction, Shift, InventoryItem, RecipeItem, Ingredient
+        db.query(InventoryTransaction).delete()
+        db.query(InventoryItem).delete()
+        db.query(RecipeItem).delete()
+        db.query(Ingredient).delete()
+        db.query(Shift).delete()
+        db.query(OrderItem).delete()
+        db.query(Order).delete()
+        db.commit()
 
     now = datetime.now(timezone.utc)
-    for day_offset in range(60, -1, -1):
+    
+    for day_offset in range(HISTORY_DAYS, -1, -1):
         current_date = now - timedelta(days=day_offset)
         
-        # Determine number of orders per outlet based on profile and day offset (for trends)
-        # Downtown: starts at 50, grows to 80
-        orders_downtown = int(50 + (60 - day_offset) * 0.5)
-        # Mall: stable around 40
-        orders_mall = 40 + random.randint(-5, 5)
-        # Suburb: starts at 30, declines to 10
-        orders_suburb = int(30 - (60 - day_offset) * 0.3)
+        # 1. Build product weights for this specific day to simulate product trends
+        day_products = []
+        day_weights = []
+        for p in products:
+            scenario = PRODUCT_SCENARIOS.get(p.name, "STABLE")
+            
+            if scenario == "GROWING":
+                # Starts at 1.0, grows to 2.5
+                w = 1.0 + (HISTORY_DAYS - day_offset) * (1.5 / HISTORY_DAYS)
+            elif scenario == "DECLINING":
+                # Starts at 2.5, drops to 1.0
+                w = 2.5 - (HISTORY_DAYS - day_offset) * (1.5 / HISTORY_DAYS)
+            else:
+                # Stable
+                w = 1.5
+                
+            day_products.append(p)
+            day_weights.append(max(0.1, w))
         
-        outlet_daily_orders = [
-            (outlets[0], orders_downtown),
-            (outlets[1], orders_mall),
-            (outlets[2], orders_suburb)
-        ]
-        
-        for outlet, num_orders in outlet_daily_orders:
+        # 2. Determine daily order volume per outlet
+        for outlet in outlets:
+            o_scenario = OUTLET_SCENARIOS.get(outlet.name, "STABLE")
+            if o_scenario == "GROWING":
+                base_orders = 50 + (HISTORY_DAYS - day_offset) * 0.5
+            elif o_scenario == "STABLE":
+                base_orders = 45
+            else: # DECLINING
+                base_orders = 35 - (HISTORY_DAYS - day_offset) * 0.25
+                
+            num_orders = int(base_orders + rng.randint(-5, 5))
+            num_orders = max(1, num_orders)
+            
+            # 3. Generate individual orders
             for _ in range(num_orders):
-                # Distribute orders throughout the day
-                hour = random.randint(8, 22)
-                minute = random.randint(0, 59)
+                hour = rng.randint(8, 22)
+                minute = rng.randint(0, 59)
                 order_time = current_date.replace(hour=hour, minute=minute)
                 
-                # Determine products for this order
-                num_items = random.randint(1, 4)
-                order_products = random.sample(products, num_items)
+                num_items = rng.randint(1, 4)
+                
+                # Pick distinct products using weights
+                order_products_set = set()
+                while len(order_products_set) < num_items:
+                    picked = rng.choices(day_products, weights=day_weights, k=1)[0]
+                    order_products_set.add(picked)
+                
+                order_products = list(order_products_set)
                 
                 total_amount = sum([p.price for p in order_products])
                 
@@ -118,13 +169,14 @@ def seed_data(db: Session):
                     created_at=order_time
                 )
                 db.add(order)
-                db.flush() # Get order.id
+                db.flush()
                 
+                # We need deterministic AOV behavior - mostly qty=1, sometimes 2
                 for product in order_products:
-                    # In this setup we assume qty=1 for simplicity, can randomize qty
-                    qty = random.randint(1, 2)
+                    qty = rng.choices([1, 2], weights=[0.85, 0.15], k=1)[0]
                     unit_price = product.price
                     subtotal = qty * unit_price
+                    
                     order_item = OrderItem(
                         order_id=order.id,
                         product_id=product.id,
@@ -133,16 +185,104 @@ def seed_data(db: Session):
                         subtotal=subtotal
                     )
                     db.add(order_item)
-                    # update order total correctly
-                    order.total_amount += (subtotal - product.price) # correct total
+                    order.total_amount += (subtotal - product.price)
                     
-        db.commit() # commit daily
+        db.commit()
     
     print("Seed data successfully inserted.")
+
+
+from app.models.domain import Role, Employee, Shift
+
+def seed_workforce(db: Session):
+    rng = random.Random(42)
+    
+    roles_data = ["Manager", "Barista", "Cashier", "Kitchen Staff", "Support"]
+    for rd in roles_data:
+        if not db.query(Role).filter_by(name=rd).first():
+            db.add(Role(name=rd, description=f"{rd} Role"))
+    db.commit()
+    roles = {r.name: r for r in db.query(Role).all()}
+    
+    outlets = db.query(Outlet).all()
+    if not outlets:
+        return
+
+    if db.query(Employee).count() == 0:
+        emp_id = 1
+        for outlet in outlets:
+            roles_for_outlet = ["Manager", "Barista", "Cashier", "Kitchen Staff", "Support"]
+            for i, role_name in enumerate(roles_for_outlet):
+                status = "ACTIVE"
+                if role_name == "Support" or (role_name == "Kitchen Staff" and outlet.name != "Brew Buzz Downtown"):
+                    status = "INACTIVE" 
+                db.add(Employee(
+                    employee_code=f"EMP{emp_id:03d}",
+                    name=f"{role_name} {emp_id}",
+                    role_id=roles[role_name].id,
+                    outlet_id=outlet.id,
+                    employment_status=status,
+                    hire_date=datetime.now(timezone.utc) - timedelta(days=rng.randint(100, 365))
+                ))
+                emp_id += 1
+        db.commit()
+    
+    employees = db.query(Employee).all()
+    
+    end_date = datetime.now(timezone.utc)
+    start_date = end_date - timedelta(days=90)
+    
+    if db.query(Shift).filter(Shift.shift_date >= start_date).count() == 0:
+        current_date = start_date
+        
+        while current_date <= end_date:
+            for outlet in outlets:
+                outlet_emps = [e for e in employees if e.outlet_id == outlet.id]
+                
+                for emp in outlet_emps:
+                    if rng.random() < 0.7:
+                        scheduled_start = current_date.replace(hour=8, minute=0, second=0, microsecond=0)
+                        scheduled_end = scheduled_start + timedelta(hours=8)
+                        
+                        actual_start = scheduled_start
+                        actual_end = scheduled_end
+                        status = "COMPLETED"
+                        
+                        r = rng.random()
+                        
+                        if outlet.name == "Brew Buzz Downtown": # HEALTHY
+                            if r < 0.02: status = "ABSENT"
+                            elif r < 0.05: actual_start += timedelta(minutes=rng.randint(10, 30))
+                        elif outlet.name == "Brew Buzz Mall": # WATCH
+                            if r < 0.05: status = "ABSENT" 
+                            elif r < 0.4: actual_end += timedelta(hours=rng.randint(2, 4)) # Overtime
+                        elif outlet.name == "Brew Buzz Suburb": # ATTENTION
+                            if r < 0.15: status = "ABSENT" 
+                            elif r < 0.4: actual_start += timedelta(minutes=rng.randint(20, 60)) # Lateness
+                        
+                        if status == "ABSENT":
+                            actual_start = None
+                            actual_end = None
+                        
+                        db.add(Shift(
+                            employee_id=emp.id,
+                            outlet_id=outlet.id,
+                            shift_date=current_date,
+                            scheduled_start=scheduled_start,
+                            scheduled_end=scheduled_end,
+                            actual_start=actual_start,
+                            actual_end=actual_end,
+                            status=status
+                        ))
+            
+            db.commit()
+            current_date += timedelta(days=1)
+        print("Workforce seed data successfully inserted.")
 
 if __name__ == "__main__":
     db = SessionLocal()
     try:
         seed_data(db)
+        seed_workforce(db)
     finally:
         db.close()

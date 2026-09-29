@@ -27,6 +27,7 @@ class Outlet(Base):
     franchise = relationship("Franchise", back_populates="outlets")
     orders = relationship("Order", back_populates="outlet")
     inventory_items = relationship("InventoryItem", back_populates="outlet")
+    employees = relationship("Employee", back_populates="outlet")
 
 class Category(Base):
     __tablename__ = "categories"
@@ -156,3 +157,47 @@ TRANSACTION_CONSUMPTION = "CONSUMPTION"
 TRANSACTION_WASTAGE = "WASTAGE"
 TRANSACTION_ADJUSTMENT = "ADJUSTMENT"
 
+
+# --- Staff Intelligence / Workforce Models ---
+
+class Role(Base):
+    __tablename__ = "roles"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, unique=True)
+    description = Column(String, nullable=True)
+
+    employees = relationship("Employee", back_populates="role")
+
+class Employee(Base):
+    __tablename__ = "employees"
+
+    id = Column(Integer, primary_key=True, index=True)
+    employee_code = Column(String, nullable=False, unique=True, index=True)
+    name = Column(String, nullable=False)
+    role_id = Column(Integer, ForeignKey("roles.id"), nullable=False)
+    outlet_id = Column(Integer, ForeignKey("outlets.id"), nullable=False)
+    employment_status = Column(String, nullable=False, default="ACTIVE")
+    hire_date = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    role = relationship("Role", back_populates="employees")
+    outlet = relationship("Outlet", back_populates="employees")
+    shifts = relationship("Shift", back_populates="employee")
+
+class Shift(Base):
+    __tablename__ = "shifts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    employee_id = Column(Integer, ForeignKey("employees.id"), nullable=False)
+    outlet_id = Column(Integer, ForeignKey("outlets.id"), nullable=False)
+    shift_date = Column(DateTime(timezone=True), nullable=False, index=True)
+    scheduled_start = Column(DateTime(timezone=True), nullable=False)
+    scheduled_end = Column(DateTime(timezone=True), nullable=False)
+    actual_start = Column(DateTime(timezone=True), nullable=True)
+    actual_end = Column(DateTime(timezone=True), nullable=True)
+    status = Column(String, nullable=False, default="SCHEDULED") # SCHEDULED, COMPLETED, ABSENT, CANCELLED
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    employee = relationship("Employee", back_populates="shifts")
+    outlet = relationship("Outlet")
